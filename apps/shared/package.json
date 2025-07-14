@@ -1,0 +1,20 @@
+{
+  "name": "@mybooklist/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for MyBookList",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "rimraf": "^5.0.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
