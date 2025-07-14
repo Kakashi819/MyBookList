@@ -55,7 +55,7 @@ export function useAddBookToLibrary() {
   const queryClient = useQueryClient();
   
   return useMutation(
-    ({ bookId, status }: { bookId: string; status: 'reading' | 'completed' | 'wishlist' }) =>
+    ({ bookId, status }: { bookId: string; status: 'reading' | 'completed' | 'wishlist' | 'dropped' }) =>
       apiClient.addBookToLibrary(bookId, status),
     {
       onSuccess: () => {
@@ -79,7 +79,7 @@ export function useUpdateBookStatus() {
         progress?: number;
         rating?: number;
       }
-    }) => apiClient.updateBookStatus(bookId, data),
+    }) => apiClient.updateBookInLibrary(bookId, data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['userLibrary']);
@@ -116,7 +116,7 @@ export function useUpdateUserProfile() {
   const queryClient = useQueryClient();
   
   return useMutation(
-    (data: { name?: string; bio?: string }) => apiClient.updateUserProfile(data),
+    (data: { name?: string; favoriteGenres?: string[] }) => apiClient.updateUserProfile(data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['userProfile']);

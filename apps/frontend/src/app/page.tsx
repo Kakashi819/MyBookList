@@ -35,26 +35,35 @@ export default function HomePage() {
       {error ? (
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <p className="text-red-600">Failed to load books. Please try again later.</p>
+            <p className="text-primary">Failed to load books. Please try again later.</p>
           </div>
         </div>
       ) : null}
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12 space-y-8">
         <GenreFilter books={books} isLoading={isLoading} />
+        
         <BookCarousel 
-          title="Featured Books" 
+          title="Trending Now" 
+          books={trendingBooks}
+          isLoading={isLoading}
+        />
+        
+        <BookCarousel 
+          title="Popular This Week" 
           books={popularBooks}
           isLoading={isLoading}
         />
+        
         <BookCarousel 
-          title="High Rated Books" 
-          books={popularBooks}
-          isLoading={isLoading}
-        />
-        <BookCarousel 
-          title="Recent Releases" 
+          title="Recently Added" 
           books={recentBooks}
+          isLoading={isLoading}
+        />
+        
+        <BookCarousel 
+          title="Highly Rated" 
+          books={popularBooks}
           isLoading={isLoading}
         />
       </div>

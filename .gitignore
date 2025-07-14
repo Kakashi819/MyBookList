@@ -324,3 +324,6 @@ test-*.json
 test-data/
 migrations/temp/
 scripts/temp/
+
+# Local Netlify folder
+.netlify

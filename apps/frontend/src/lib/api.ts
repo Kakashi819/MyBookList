@@ -112,6 +112,13 @@ class ApiClient {
     return this.request('/api/users/profile');
   }
 
+  async updateUserProfile(data: { name?: string; favoriteGenres?: string[] }): Promise<User> {
+    return this.request('/api/users/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Comments API
   async getBookComments(bookId: string): Promise<Comment[]> {
     return this.request(`/api/books/${bookId}/comments`);

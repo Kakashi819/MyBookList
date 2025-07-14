@@ -16,7 +16,8 @@
     "install:all": "npm install",
     "dev:frontend": "npm run dev --workspace=@mybooklist/frontend",
     "dev:backend": "npm run dev --workspace=@mybooklist/backend",
-    "build:shared": "npm run build --workspace=@mybooklist/shared"
+    "build:shared": "npm run build --workspace=@mybooklist/shared",
+    "build:frontend": "npm run build --workspace=@mybooklist/shared && npm run build --workspace=@mybooklist/frontend"
   },
   "devDependencies": {
     "rimraf": "^5.0.5"
