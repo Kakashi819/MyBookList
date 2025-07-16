@@ -1,4 +1,5 @@
-export interface Book {
+// Book Table
+interface Book {
   id: string;
   title: string;
   author: string;
@@ -15,7 +16,8 @@ export interface Book {
   isFeatured?: boolean;
 }
 
-export interface Author {
+// Author Table
+interface Author {
   id: string;
   name: string;
   bio: string;
@@ -25,7 +27,8 @@ export interface Author {
   totalBooks: number;
 }
 
-export interface UserBook {
+// UserBook Table (User's Library)
+interface UserBook {
   bookId: string;
   status: 'reading' | 'completed' | 'wishlist' | 'dropped';
   userRating?: number;
@@ -34,10 +37,37 @@ export interface UserBook {
   dateCompleted?: string;
 }
 
-export interface Genre {
+// Genre Table
+interface Genre {
   id: string;
   name: string;
   color: string;
   description: string;
-  bookCount?: number;
+}
+
+// User Table
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url?: string;
+  role: 'user' | 'admin';
+  created_at: string;
+  last_login?: string;
+}
+
+// Comment Table
+interface Comment {
+  id: string;
+  book_id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar?: string;
+  content: string;
+  rating?: number;
+  created_at: string;
+  updated_at: string;
+  is_approved: boolean;
+  likes: number;
+  replies?: Comment[];
 }

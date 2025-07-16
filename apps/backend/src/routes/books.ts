@@ -6,20 +6,31 @@ const router = Router();
 // GET /api/books
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 20, genre, search, featured } = req.query;
+    const { limit = 20, genre, search, featured, cursor } = req.query;
     
     const result = await bookService.getAllBooks({
-      page: Number(page),
       limit: Number(limit),
       genre: genre as string,
       search: search as string,
-      featured: featured === 'true'
+      featured: featured === 'true',
+      cursor: cursor as string,
     });
     
     res.json(result);
   } catch (error) {
     console.error('Error fetching books:', error);
     res.status(500).json({ error: 'Failed to fetch books' });
+  }
+});
+
+// GET /api/books/genres
+router.get('/genres', async (req, res) => {
+  try {
+    const genres = await bookService.getAllGenres();
+    res.json(genres);
+  } catch (error) {
+    console.error('Error fetching genres:', error);
+    res.status(500).json({ error: 'Failed to fetch genres' });
   }
 });
 
@@ -82,17 +93,6 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting book:', error);
     res.status(500).json({ error: 'Failed to delete book' });
-  }
-});
-
-// GET /api/books/genres
-router.get('/genres', async (req, res) => {
-  try {
-    const genres = await bookService.getAllGenres();
-    res.json(genres);
-  } catch (error) {
-    console.error('Error fetching genres:', error);
-    res.status(500).json({ error: 'Failed to fetch genres' });
   }
 });
 

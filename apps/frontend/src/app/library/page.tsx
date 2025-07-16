@@ -8,6 +8,8 @@ import { useUserLibrary, useUpdateBookStatus, useRemoveBookFromLibrary } from '@
 import { BookOpen, Heart, Clock, CheckCircle, Plus, Search, Filter, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BookModal } from '@/components/books/BookModal';
+import { BookCard } from '@/components/books/BookCard';
 
 type BookStatus = 'reading' | 'completed' | 'wishlist' | 'dropped';
 
@@ -38,6 +40,8 @@ export default function LibraryPage() {
   const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<BookStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  console.log('LibraryPage render', { selectedBookId });
 
   const { data: libraryBooks, isLoading, error } = useUserLibrary();
   const updateBookStatusMutation = useUpdateBookStatus();
@@ -139,10 +143,14 @@ export default function LibraryPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+      <BookModal
+        bookId={selectedBookId}
+        isOpen={selectedBookId !== null}
+        onClose={() => setSelectedBookId(null)}
+      />
       <main className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-8 mt-8">
           <h1 className="text-4xl font-bold mb-4">My Library</h1>
           <p className="text-xl text-muted-foreground">
             Track your reading journey and discover new books
@@ -229,15 +237,13 @@ export default function LibraryPage() {
 
         {/* Books Grid */}
         {!isLoading && filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredBooks.map(userBook => (
-              <LibraryBookCard 
-                key={userBook.bookId} 
-                userBook={userBook}
-                onStatusChange={handleStatusChange}
-                onProgressUpdate={handleProgressUpdate}
-                onRemove={handleRemoveBook}
-                isUpdating={updateBookStatusMutation.isLoading}
+              <BookCard
+                key={userBook.bookId}
+                book={userBook.book}
+                onClick={bookId => setSelectedBookId(bookId)}
+                className="h-fit"
               />
             ))}
           </div>
@@ -261,108 +267,4 @@ export default function LibraryPage() {
   );
 }
 
-interface LibraryBookCardProps {
-  userBook: any;
-  onStatusChange: (bookId: string, status: BookStatus) => void;
-  onProgressUpdate: (bookId: string, progress: number) => void;
-  onRemove: (bookId: string) => void;
-  isUpdating: boolean;
-}
-
-function LibraryBookCard({ userBook, onStatusChange, onProgressUpdate, onRemove, isUpdating }: LibraryBookCardProps) {
-  const statusConfig_local = statusConfig[userBook.status as BookStatus];
-  const Icon = statusConfig_local.icon;
-  const book = userBook.book;
-
-  if (!book) return null;
-
-  return (
-    <div className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div className="flex gap-4">
-        <div className="flex-shrink-0">
-          <Image
-            src={book.coverUrl || '/placeholder-book.jpg'}
-            alt={book.title}
-            width={80}
-            height={120}
-            className="w-16 h-24 object-cover rounded"
-          />
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start mb-2">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold line-clamp-2 mb-1">{book.title}</h3>
-              <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onRemove(userBook.bookId)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-          
-          {/* Status Dropdown */}
-          <select
-            value={userBook.status}
-            onChange={(e) => onStatusChange(userBook.bookId, e.target.value as BookStatus)}
-            disabled={isUpdating}
-            className="text-xs border border-border rounded px-2 py-1 mb-2"
-          >
-            {Object.entries(statusConfig).map(([status, config]) => (
-              <option key={status} value={status}>{config.label}</option>
-            ))}
-          </select>
-          
-          {userBook.status === 'reading' && (
-            <div className="mt-2">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>Progress</span>
-                <span>{userBook.progress || 0}%</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2 mb-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all"
-                  style={{ width: `${userBook.progress || 0}%` }}
-                />
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={userBook.progress || 0}
-                onChange={(e) => onProgressUpdate(userBook.bookId, parseInt(e.target.value))}
-                className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-          )}
-          
-          {userBook.userRating && (
-            <div className="mt-2 flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">My Rating:</span>
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <span 
-                    key={i} 
-                    className={`text-xs ${i < userBook.userRating ? 'text-yellow-400' : 'text-muted-foreground'}`}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {userBook.notes && (
-            <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-              "{userBook.notes}"
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+// ...removed LibraryBookCard, now using BookCard everywhere...

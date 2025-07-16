@@ -28,7 +28,7 @@ export default function HomePage() {
     .slice(5, 15); // Different slice to show variety
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background pt-16">
       <Header />
       <HeroSection />
       

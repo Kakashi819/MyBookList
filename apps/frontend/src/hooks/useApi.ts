@@ -1,21 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { apiClient, Book, Genre, UserBook, Comment } from '@/lib/api';
+import { useInfiniteBooks } from './useInfiniteBooks';
 
 // Books
 export function useBooks(params?: {
   search?: string;
   genre?: string;
   limit?: number;
-  offset?: number;
+  featured?: boolean;
 }) {
-  return useQuery(
-    ['books', params],
-    () => apiClient.getBooks(params),
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      keepPreviousData: true,
-    }
-  );
+  const { data, ...rest } = useInfiniteBooks(params);
+  
+  return {
+    data: data?.pages[0],
+    ...rest,
+  };
 }
 
 export function useBook(id: string) {

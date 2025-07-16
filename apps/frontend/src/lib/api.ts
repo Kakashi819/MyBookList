@@ -46,16 +46,16 @@ class ApiClient {
   async getBooks(params?: {
     search?: string;
     genre?: string;
-    page?: number;
     limit?: number;
     featured?: boolean;
-  }): Promise<{ books: Book[]; total: number; page: number; limit: number; totalPages: number }> {
+    cursor?: string;
+  }): Promise<{ books: Book[]; nextCursor: string | null }> {
     const searchParams = new URLSearchParams();
     if (params?.search) searchParams.append('search', params.search);
     if (params?.genre && params.genre !== 'All') searchParams.append('genre', params.genre);
-    if (params?.page) searchParams.append('page', params.page.toString());
     if (params?.limit) searchParams.append('limit', params.limit.toString());
     if (params?.featured) searchParams.append('featured', 'true');
+    if (params?.cursor) searchParams.append('cursor', params.cursor);
 
     const query = searchParams.toString();
     return this.request(`/api/books${query ? `?${query}` : ''}`);

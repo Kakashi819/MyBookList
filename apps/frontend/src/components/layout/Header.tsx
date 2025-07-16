@@ -1,15 +1,11 @@
-'use client';
-
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
-import { SearchModal } from '@/components/ui/search-modal';
-import { Menu, X, Search, User, LogOut, Bell } from 'lucide-react';
+import { Menu, X, User, LogOut, Bell } from 'lucide-react';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut } = useAuth();
 
@@ -65,17 +61,8 @@ export function Header() {
               )}
             </nav>
 
-            {/* Search and User Actions */}
+            {/* User Actions */}
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="hidden md:flex hover:bg-muted/50"
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-              
               {user ? (
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm" className="hover:bg-muted/50">
@@ -131,27 +118,11 @@ export function Header() {
                     My Library
                   </Link>
                 )}
-                <div className="pt-4 border-t border-border/40">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full justify-start hover:bg-muted/50"
-                    onClick={() => setIsSearchOpen(true)}
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Search
-                  </Button>
-                </div>
               </nav>
             </div>
           )}
         </div>
       </header>
-      
-      <SearchModal 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
-      />
     </>
   );
 }

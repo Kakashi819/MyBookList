@@ -3,19 +3,19 @@ import { supabase } from './supabase';
 
 export class BookService {
   async getAllBooks(options: {
-    page?: number;
     limit?: number;
     genre?: string;
     search?: string;
     featured?: boolean;
+    cursor?: string;
   } = {}) {
-    const { page = 1, limit = 20, genre, search, featured } = options;
+    const { limit = 20, genre, search, featured, cursor } = options;
     
     let query = supabase
       .from('books')
       .select(`
         *,
-        book_genres!inner(
+        book_genres(
           genres(*)
         )
       `);
@@ -35,14 +35,18 @@ export class BookService {
       query = query.eq('is_featured', true);
     }
 
-    // Add pagination
-    const startIndex = (page - 1) * limit;
-    query = query.range(startIndex, startIndex + limit - 1);
+    // Add pagination with cursor
+    if (cursor) {
+      query = query.gt('id', cursor);
+    }
 
-    // Order by rating
-    query = query.order('rating', { ascending: false });
+    // Order by totalRatings (number of reviews) first, then by rating
+    query = query
+      .order('total_ratings', { ascending: false })
+      .order('rating', { ascending: false })
+      .limit(limit);
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch books: ${error.message}`);
@@ -57,7 +61,7 @@ export class BookService {
       coverUrl: book.cover_url,
       rating: book.rating,
       totalRatings: book.total_ratings,
-      genre: book.book_genres?.map((bg: any) => bg.genres.name) || [],
+      genre: book.book_genres?.map((bg: any) => bg.genres?.name).filter(Boolean) || [],
       publishedYear: book.published_year,
       pages: book.pages,
       isbn: book.isbn,
@@ -66,12 +70,11 @@ export class BookService {
       isFeatured: book.is_featured
     })) || [];
 
+    const nextCursor = books.length === limit ? books[books.length - 1].id : null;
+
     return {
       books,
-      total: count || 0,
-      page,
-      limit,
-      totalPages: Math.ceil((count || 0) / limit)
+      nextCursor
     };
   }
 
@@ -243,14 +246,23 @@ export class BookService {
   async getAllGenres(): Promise<Genre[]> {
     const { data, error } = await supabase
       .from('genres')
-      .select('*')
+      .select(`
+        *,
+        book_genres(count)
+      `)
       .order('name');
 
     if (error) {
       throw new Error(`Failed to fetch genres: ${error.message}`);
     }
 
-    return data || [];
+    return data.map(g => ({
+      id: g.id,
+      name: g.name,
+      color: g.color,
+      description: g.description,
+      bookCount: g.book_genres[0]?.count || 0,
+    })) || [];
   }
 }
 

@@ -69,7 +69,7 @@ export function BookCarousel({ title, books = [], isLoading = false }: BookCarou
           className="overflow-x-auto scrollbar-hide"
         >
           <div className="flex gap-4 pb-4">
-            {books.map((book, index) => (
+            {books.filter(book => book && book.id).map((book, index) => (
               <BookCard 
                 key={book.id} 
                 book={book} 
@@ -108,6 +108,27 @@ function BookCard({
   onLeave: () => void;
   onClick: (bookId: string) => void;
 }) {
+  // Defensive: If book is missing or not an object, don't render
+  if (!book || typeof book !== 'object') return null;
+
+  // Defensive: fallback values for book fields
+  const {
+    id = '',
+    title = 'Untitled',
+    author = 'Unknown Author',
+    coverUrl = '',
+    rating = 0,
+    genre = [],
+    publishedYear = '',
+  } = book || {};
+
+  // Additional safety checks
+  if (!id) return null;
+
+  const displayRating = typeof rating === 'number' ? rating.toFixed(1) : '0.0';
+  const displayGenre = Array.isArray(genre) && genre.length > 0 ? genre[0] : 'Unknown';
+  const displayYear = publishedYear || 'N/A';
+
   return (
     <div 
       className={`flex-shrink-0 w-64 group cursor-pointer transition-all duration-300 ${
@@ -115,12 +136,12 @@ function BookCard({
       }`}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
-      onClick={() => onClick(book.id)}
+      onClick={() => onClick(id)}
     >
       <div className="relative mb-3 overflow-hidden rounded-lg bg-card">
         <Image
-          src={book.coverUrl}
-          alt={book.title}
+          src={coverUrl || '/placeholder-book.jpg'}
+          alt={title || 'Book cover'}
           width={256}
           height={144}
           className="w-full h-36 object-cover transition-transform duration-300 group-hover:scale-110"
@@ -140,7 +161,7 @@ function BookCard({
             className="bg-primary/90 hover:bg-primary text-white p-2"
             onClick={(e) => {
               e.stopPropagation();
-              onClick(book.id);
+              onClick(id);
             }}
           >
             <Play className="h-3 w-3" />
@@ -162,22 +183,22 @@ function BookCard({
         <div className="absolute top-2 left-2">
           <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-medium text-white">{book.rating}</span>
+            <span className="text-xs font-medium text-white">{displayRating}</span>
           </div>
         </div>
       </div>
       
       <div className="space-y-2">
         <h3 className="font-semibold text-sm line-clamp-2 text-foreground group-hover:text-primary transition-colors">
-          {book.title}
+          {title}
         </h3>
-        <p className="text-sm text-muted-foreground">{book.author}</p>
+        <p className="text-sm text-muted-foreground">{author}</p>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="px-2 py-1 bg-muted/50 rounded-full">
-            {book.genre?.[0] || 'Unknown'}
+            {displayGenre}
           </span>
           <span>•</span>
-          <span>{book.publishedYear || 'N/A'}</span>
+          <span>{displayYear}</span>
         </div>
         
         {/* Progress bar for reading status (optional) */}

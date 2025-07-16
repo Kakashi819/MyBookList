@@ -2,10 +2,24 @@
 
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
-import { useBooks } from '@/hooks/useApi';
+import { useGenres } from '@/hooks/useGenres';
 import { ArrowRight, BookOpen, Heart, Zap, Globe, Users, Star, Brain, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useMemo } from 'react';
+
+// A simple hash function to generate a color from a string
+const stringToColor = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  return color;
+};
 
 // Default genre configurations with icons and colors
 const genreConfig: Record<string, { icon: any; color: string; description: string }> = {
@@ -57,59 +71,36 @@ const genreConfig: Record<string, { icon: any; color: string; description: strin
 };
 
 export default function GenresPage() {
-  const { data: books, isLoading, error } = useBooks();
+  const { data: genres, isLoading, error } = useGenres();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Process books data to extract genres and statistics
-  const genreStats = useMemo(() => {
-    if (!books?.books) return [];
-
-    const genreMap = new Map<string, { count: number; popularBooks: string[] }>();
-
-    books.books.forEach((book: any) => {
-      if (book.genre && Array.isArray(book.genre)) {
-        // Handle multiple genres per book
-        book.genre.forEach((genre: string) => {
-          const genreLower = genre.toLowerCase();
-          const existing = genreMap.get(genreLower) || { count: 0, popularBooks: [] };
-          existing.count += 1;
-          
-          // Add to popular books if highly rated
-          if ((book.rating || 0) >= 4.0 && existing.popularBooks.length < 5) {
-            existing.popularBooks.push(book.title);
-          }
-          
-          genreMap.set(genreLower, existing);
-        });
-      }
-    });
-
-    return Array.from(genreMap.entries())
-      .map(([genre, stats]) => ({
-        id: genre.replace(/\s+/g, '-'),
-        name: genre.charAt(0).toUpperCase() + genre.slice(1),
-        originalName: genre,
-        bookCount: stats.count,
-        popularBooks: stats.popularBooks,
-        ...genreConfig[genre] || {
-          icon: BookOpen,
-          color: 'bg-slate-500',
-          description: `Discover books in the ${genre} genre`
-        }
-      }))
-      .sort((a, b) => b.bookCount - a.bookCount);
-  }, [books]);
+  const processedGenres = useMemo(() => {
+    if (!genres) return [];
+    return genres.map(genre => {
+      const config = genreConfig[genre.name.toLowerCase()];
+      const color = config ? config.color : ''; // We will handle the color in the component
+      return {
+        ...genre,
+        icon: config ? config.icon : BookOpen,
+        color: color,
+        description: config ? config.description : `Discover books in the ${genre.name} genre`,
+      };
+    }).sort((a, b) => (b.bookCount || 0) - (a.bookCount || 0));
+  }, [genres]);
 
   // Find featured genre (most popular)
-  const featuredGenre = genreStats[0];
+  const featuredGenre = processedGenres[0];
 
   // Filter genres based on search
-  const filteredGenres = genreStats.filter(genre =>
+  const filteredGenres = processedGenres.filter(genre =>
     genre.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalBooks = books?.books?.length || 0;
-  const totalGenres = genreStats.length;
+  const totalGenres = processedGenres.length;
+  const totalBooks = useMemo(() => {
+    if (!processedGenres) return 0;
+    return processedGenres.reduce((acc, genre) => acc + (genre.bookCount || 0), 0);
+  }, [processedGenres]);
 
   if (error) {
     return (
@@ -117,7 +108,7 @@ export default function GenresPage() {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <p className="text-red-600">Failed to load books data. Please try again later.</p>
+            <p className="text-red-600">Failed to load genres. Please try again later.</p>
           </div>
         </div>
       </div>
@@ -128,7 +119,7 @@ export default function GenresPage() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pt-24">
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Explore Genres</h1>
@@ -157,11 +148,11 @@ export default function GenresPage() {
           </div>
         )}
 
-        {!isLoading && genreStats.length === 0 && (
+        {!isLoading && processedGenres.length === 0 && (
           <div className="text-center py-12">
             <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No genres found</h3>
-            <p className="text-muted-foreground mb-6">Books will be organized by genres once they are added to the library.</p>
+            <p className="text-muted-foreground mb-6">Come back later to see genres for our books.</p>
             <Link href="/books">
               <Button>Browse All Books</Button>
             </Link>
@@ -180,7 +171,7 @@ export default function GenresPage() {
                 <p className="text-lg text-muted-foreground mb-6">
                   {featuredGenre.description}
                 </p>
-                <Link href={`/books?genre=${featuredGenre.originalName}`}>
+                <Link href={`/books?genre=${featuredGenre.name}`}>
                   <Button size="lg">
                     Explore {featuredGenre.name} Books
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -208,7 +199,7 @@ export default function GenresPage() {
         )}
 
         {/* Stats Section */}
-        {!isLoading && genreStats.length > 0 && (
+        {!isLoading && processedGenres.length > 0 && (
           <div className="mt-16 text-center">
             <h2 className="text-3xl font-bold mb-8">By the Numbers</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -250,12 +241,17 @@ export default function GenresPage() {
 
 function GenreCard({ genre }: { genre: any }) {
   const Icon = genre.icon;
-  
+  const bgColor = genre.color ? genre.color : ''; // Use predefined color if available
+  const dynamicStyle = genre.color ? {} : { backgroundColor: stringToColor(genre.name) };
+
   return (
-    <Link href={`/books?genre=${genre.originalName}`}>
+    <Link href={`/books?genre=${encodeURIComponent(genre.name)}`}>
       <div className="group p-6 border border-border rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer hover:bg-accent/50">
         <div className="flex items-center gap-4 mb-4">
-          <div className={`w-12 h-12 ${genre.color} rounded-lg flex items-center justify-center`}>
+          <div 
+            className={`w-12 h-12 ${bgColor} rounded-lg flex items-center justify-center`}
+            style={dynamicStyle}
+          >
             <Icon className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -269,26 +265,6 @@ function GenreCard({ genre }: { genre: any }) {
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
           {genre.description}
         </p>
-        
-        {genre.popularBooks.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Popular Books:
-            </p>
-            <div className="flex flex-wrap gap-1">
-              {genre.popularBooks.slice(0, 2).map((book: string, index: number) => (
-                <span key={index} className="text-xs bg-muted px-2 py-1 rounded">
-                  {book}
-                </span>
-              ))}
-              {genre.popularBooks.length > 2 && (
-                <span className="text-xs text-muted-foreground">
-                  +{genre.popularBooks.length - 2} more
-                </span>
-              )}
-            </div>
-          </div>
-        )}
         
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
           <span className="text-sm font-medium group-hover:text-primary transition-colors">
